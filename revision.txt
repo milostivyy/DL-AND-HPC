@@ -477,5 +477,73 @@ int main(){
     
     
 }
+KNN
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import multiprocessing
+
+def euclidean_distance(point1, point2):
+    # Calculate the Euclidean distance between two points
+    return np.sqrt(np.sum((point1 - point2) ** 2))
+
+def knn_sequential(X_train, y_train, X_test, k):
+    num_test = X_test.shape[0]
+    num_train = X_train.shape[0]
+    y_pred = np.zeros(num_test, dtype=y_train.dtype)
+
+    for i in range(num_test):
+        distances = np.zeros(num_train)
+        for j in range(num_train):
+            distances[j] = euclidean_distance(X_test[i], X_train[j])
+
+        k_nearest_indices = np.argpartition(distances, k)[:k]
+        k_nearest_labels = y_train[k_nearest_indices]
+        unique_labels, label_counts = np.unique(k_nearest_labels, return_counts=True)
+        y_pred[i] = unique_labels[np.argmax(label_counts)]
+
+    return y_pred
+
+def knn_parallel(X_train, y_train, X_test, k):
+    num_test = X_test.shape[0]
+    num_train = X_train.shape[0]
+    y_pred = np.zeros(num_test, dtype=y_train.dtype)
+
+    for i in range(num_test):
+        distances = np.zeros(num_train)
+
+        with multiprocessing.Pool() as pool:
+            distances = pool.starmap(euclidean_distance, [(X_test[i], X_train[j]) for j in range(num_train)])
+
+        k_nearest_indices = np.argpartition(distances, k)[:k]
+        k_nearest_labels = y_train[k_nearest_indices]
+        unique_labels, label_counts = np.unique(k_nearest_labels, return_counts=True)
+        y_pred[i] = unique_labels[np.argmax(label_counts)]
+
+    return y_pred
+
+# Load the Iris dataset
+iris = load_iris()
+X = iris.data
+y = iris.target
+
+# Split the dataset into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Sequential KNN
+y_pred_sequential = knn_sequential(X_train, y_train, X_test, k=5)
+
+# Parallel KNN
+y_pred_parallel = knn_parallel(X_train, y_train, X_test, k=5)
+
+# Calculate accuracies
+accuracy_sequential = accuracy_score(y_test, y_pred_sequential)
+accuracy_parallel = accuracy_score(y_test, y_pred_parallel)
+
+# Print the accuracies
+print("Sequential Accuracy:", accuracy_sequential)
+print("Parallel Accuracy  :", accuracy_parallel)
+
  
 

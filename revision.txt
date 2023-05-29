@@ -1,3 +1,220 @@
+[0:09 pm, 29/05/2023] Mahima Chauhan: // Includes C++ libraries for various functions
+#include <bits/stdc++.h>
+// Includes OpenMP for parallel processing
+#include <omp.h>
+// Includes C++ chrono library for timing functions
+#include <chrono>
+// Uses std namespace for standard C++ functions
+using namespace std::chrono;
+using namespace std;
+// Declares integer N and an array of vectors graph
+int N;
+vector<int> graph[100000];
+// Parallel BFS function
+void bfs(int start)
+{
+    vector<bool> vis(N);
+    queue<int> q;
+    q.push(start);
+
+    while (!q.empty())
+    {
+        // Get the next node from the queue
+        int cur = q.front();
+        q.pop();
+        // If the node has not been visited yet
+        if (!vis[cur])
+        {
+            vis[cur] = 1;
+            cout << cur << " ";
+// Use OpenMP to parallelize the for loop
+#pragma omp parallel for
+            // Check all nodes adjacent to the current node
+            for (int next : graph[cur])
+            {
+                if (!vis[next])
+                    q.push(next);
+            }
+        }
+    }
+}
+// Sequential BFS function
+void sbfs(int start)
+{
+    vector<bool> vis(N);
+    queue<int> q;
+    q.push(start);
+
+    while (!q.empty())
+    {
+        // Get the next node from the queue
+        int cur = q.front();
+        q.pop();
+        // If the node has not been visited yet
+        if (!vis[cur])
+        {
+            vis[cur] = 1;
+            cout << cur << " ";
+            // Check all nodes adjacent to the current node
+            for (int next : graph[cur])
+            {
+                if (!vis[next])
+                    q.push(next);
+            }
+        }
+    }
+}
+
+int main()
+{
+    char* username = std::getenv("USER"); // Get the value of the USER environment variable
+    std::cout << "Username folder: /root/" << 3427 Mahima Chauhan<< std::endl; // Output the username folder
+  // Prompt the user to enter the number of vertices and edges
+    cout << "Enter no of vertex and edges" << endl;
+    // Declare integer n and read input values for N and n
+    int n;
+    cin >> N >> n;
+    // Create edges between adjacent vertices in the graph
+    for (int i = 1; i < n; i++)
+    {
+        graph[i].push_back(i + 1);
+        graph[i + 1].push_back(i);
+    }
+    // Create edges between the first vertex and all other vertices
+    for (int i = 1; i < n; i++)
+    {
+        graph[1].push_back(i + 1);
+        graph[i + 1].push_back(1);
+    }
+    // Set the starting vertex
+    int startn = 1;
+    // Start the timer and run the sequential BFS
+    auto start = high_resolution_clock::now();
+    sbfs(startn);
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    // Print the time taken by the sequential BFS
+    cout << endl;
+    cout << " time taken by seq bfs: " << duration.count() << endl;
+    // Start the timer and run the parallel BFS
+    start = high_resolution_clock::now();
+    bfs(startn);
+    stop = high_resolution_clock::now();
+    duration = duration_cast<microseconds>(stop - start);
+    // Print the time taken by the parallel BFS
+    cout << endl;
+    cout << " time taken by parallel bfs: " << duration.count() << endl;
+    return 0;
+}
+[0:10 pm, 29/05/2023] Mahima Chauhan: // Includes C++ libraries for various functions
+#include <bits/stdc++.h>
+// Includes OpenMP for parallel processing
+#include <omp.h>
+// Includes C++ chrono library for timing functions
+#include <chrono>
+// Uses std namespace for standard C++ functions
+using namespace std::chrono;
+using namespace std;
+
+// Declares integer N and an array of vectors graph
+int N;
+vector<int> graph[100000];
+
+// Parallel DFS function
+void dfs(int start)
+{
+    vector<bool> vis(N);
+    stack<int> q;
+    q.push(start);
+
+    while (!q.empty())
+    {
+        // Get the next node from the stack
+        int cur = q.top();
+        q.pop();
+        // If the node has not been visited yet
+        if (!vis[cur])
+        {
+            vis[cur] = 1;
+            cout << cur << " ";
+// Use OpenMP to parallelize the for loop
+#pragma omp parallel for
+            // Check all nodes adjacent to the current node
+            for (int next : graph[cur])
+            {
+                if (!vis[next])
+                    q.push(next);
+            }
+        }
+    }
+}
+
+// Sequential DFS function
+void sdfs(int start)
+{
+    vector<bool> vis(N);
+    stack<int> q;
+    q.push(start);
+
+    while (!q.empty())
+    {
+        // Get the next node from the stack
+        int cur = q.top();
+        q.pop();
+        // If the node has not been visited yet
+        if (!vis[cur])
+        {
+            vis[cur] = 1;
+            cout << cur << " ";
+            // Check all nodes adjacent to the current node
+            for (int next : graph[cur])
+            {
+                if (!vis[next])
+                    q.push(next);
+            }
+        }
+    }
+}
+
+int main()
+{
+    // Prompt the user to enter the number of vertices and edges
+    cout << "Enter no of vertex and edges" << endl;
+    // Declare integer n and read input values for N and n
+    int n;
+    cin >> N >> n;
+    // Create edges between adjacent vertices in the graph
+    for (int i = 1; i < n; i++)
+    {
+        graph[i].push_back(i + 1);
+        graph[i + 1].push_back(i);
+    }
+    // Create edges between the first vertex and all other vertices
+    for (int i = 1; i < n; i++)
+    {
+        graph[1].push_back(i + 1);
+        graph[i + 1].push_back(1);
+    }
+    // Set the starting vertex
+    int startn = 1;
+    // Start the timer and run the sequential DFS
+    auto start = high_resolution_clock::now();
+    sdfs(startn);
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    // Print the time taken by the sequential DFS
+    cout << endl;
+    cout << " time taken by seq dfs: " << duration.count() << "ms" << endl;
+    // Start the timer and run the parallel DFS
+    start = high_resolution_clock::now();
+    dfs(startn);
+    stop = high_resolution_clock::now();
+    duration = duration_cast<microseconds>(stop - start);
+    // Print the time taken by the parallel DFS
+    cout << endl;
+    cout << " time taken by parallel dfs: " << duration.count() << "ms" << endl;
+    return 0;
+}
 bubble sort
 // #include<bits/stdc++.h>
 // #include<omp.h>

@@ -478,72 +478,77 @@ int main(){
     
 }
 KNN
-import numpy as np
-from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-import multiprocessing
+#include <iostream>
+#include <cmath>
+#include <vector>
+#include <algorithm>
+#include <omp.h>
 
-def euclidean_distance(point1, point2):
-    # Calculate the Euclidean distance between two points
-    return np.sqrt(np.sum((point1 - point2) ** 2))
+struct IrisData {
+    std::vector<double> features;
+    int label;
+};
 
-def knn_sequential(X_train, y_train, X_test, k):
-    num_test = X_test.shape[0]
-    num_train = X_train.shape[0]
-    y_pred = np.zeros(num_test, dtype=y_train.dtype)
+double euclidean_distance(const std::vector<double>& point1, const std::vector<double>& point2) {
+    double distance = 0.0;
+    for (size_t i = 0; i < point1.size(); i++) {
+        distance += std::pow(point1[i] - point2[i], 2);
+    }
+    return std::sqrt(distance);
+}
 
-    for i in range(num_test):
-        distances = np.zeros(num_train)
-        for j in range(num_train):
-            distances[j] = euclidean_distance(X_test[i], X_train[j])
+std::vector<int> knn_parallel(const std::vector<IrisData>& train_data, const std::vector<IrisData>& test_data, int k) {
+    std::vector<int> predictions;
+    #pragma omp parallel for
+    for (size_t i = 0; i < test_data.size(); i++) {
+        const IrisData& test_instance = test_data[i];
+        std::vector<std::pair<double, int>> distances;
 
-        k_nearest_indices = np.argpartition(distances, k)[:k]
-        k_nearest_labels = y_train[k_nearest_indices]
-        unique_labels, label_counts = np.unique(k_nearest_labels, return_counts=True)
-        y_pred[i] = unique_labels[np.argmax(label_counts)]
+        for (size_t j = 0; j < train_data.size(); j++) {
+            const IrisData& train_instance = train_data[j];
+            double distance = euclidean_distance(test_instance.features, train_instance.features);
+            distances.emplace_back(distance, train_instance.label);
+        }
 
-    return y_pred
+        std::partial_sort(distances.begin(), distances.begin() + k, distances.end(),
+            [](const std::pair<double, int>& a, const std::pair<double, int>& b) {
+                return a.first < b.first;
+            });
 
-def knn_parallel(X_train, y_train, X_test, k):
-    num_test = X_test.shape[0]
-    num_train = X_train.shape[0]
-    y_pred = np.zeros(num_test, dtype=y_train.dtype)
+        std::vector<int> label_counts(3, 0);
+        for (int j = 0; j < k; j++) {
+            label_counts[distances[j].second]++;
+        }
 
-    for i in range(num_test):
-        distances = np.zeros(num_train)
+        int max_count = *std::max_element(label_counts.begin(), label_counts.end());
+        int predicted_label = std::distance(label_counts.begin(), std::find(label_counts.begin(), label_counts.end(), max_count));
+        predictions.push_back(predicted_label);
+    }
 
-        with multiprocessing.Pool() as pool:
-            distances = pool.starmap(euclidean_distance, [(X_test[i], X_train[j]) for j in range(num_train)])
+    return predictions;
+}
 
-        k_nearest_indices = np.argpartition(distances, k)[:k]
-        k_nearest_labels = y_train[k_nearest_indices]
-        unique_labels, label_counts = np.unique(k_nearest_labels, return_counts=True)
-        y_pred[i] = unique_labels[np.argmax(label_counts)]
+int main() {
+    // Load the Iris dataset
+    std::vector<IrisData> data = {
+        {{5.1, 3.5, 1.4, 0.2}, 0},
+        {{4.9, 3.0, 1.4, 0.2}, 0},
+        // Add the remaining instances from the dataset
+    };
 
-    return y_pred
+    // Split the dataset into training and test sets
+    std::vector<IrisData> train_data(data.begin(), data.begin() + 120);
+    std::vector<IrisData> test_data(data.begin() + 120, data.end());
 
-# Load the Iris dataset
-iris = load_iris()
-X = iris.data
-y = iris.target
+    // KNN
+    int k = 5;
+    std::vector<int> predictions = knn_parallel(train_data, test_data, k);
 
-# Split the dataset into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    // Print the predictions
+    for (int label : predictions) {
+        std::cout << label << " ";
+    }
+    std::cout << std::endl;
 
-# Sequential KNN
-y_pred_sequential = knn_sequential(X_train, y_train, X_test, k=5)
-
-# Parallel KNN
-y_pred_parallel = knn_parallel(X_train, y_train, X_test, k=5)
-
-# Calculate accuracies
-accuracy_sequential = accuracy_score(y_test, y_pred_sequential)
-accuracy_parallel = accuracy_score(y_test, y_pred_parallel)
-
-# Print the accuracies
-print("Sequential Accuracy:", accuracy_sequential)
-print("Parallel Accuracy  :", accuracy_parallel)
-
- 
-
+    return 0;
+}
